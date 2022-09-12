@@ -52,6 +52,12 @@ fn main() {
             );
             match parse_file(Path::new(&full_path)) {
                 Ok(s) => {
+                    match fs::create_dir_all(format!("./{}", &name)) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!("Failed to create directory ({}): {e}", &name)
+                        }
+                    }
                     for dir in s.directories {
                         match fs::create_dir_all(format!("./{}/{}", &name, &dir)) {
                             Ok(_) => {}

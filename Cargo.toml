@@ -1,6 +1,6 @@
 [package]
 name = "npi"
-version = "0.1.0"
+version = "0.1.1"
 authors = [ "Viktor D. <dudnik.0x76@gmail.com>" ]
 description = "Cli tool to init projects with custom file structure"
 license = "MIT"
