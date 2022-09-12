@@ -1,0 +1,26 @@
+[:out/test/]
+[out/test.txt]
+I'm a test! :)
+[EOF]
+[Makefile]
+output := {{name}}
+
+default: build
+
+build: clean
+	gcc -Wall -g main.c -o ${output}
+
+clean:
+	rm -f ${output} 
+
+run: build
+	./${output}
+[EOF]
+[main.c]
+#include <stdio.h>
+
+int main(void){
+    printf("Wait... This is not Rust...\n");
+    return 0;
+}
+[EOF]

@@ -1,9 +1,12 @@
 [package]
 name = "npi"
-version = "0.0.0"
+version = "0.1.0"
 authors = [ "Viktor D. <dudnik.0x76@gmail.com>" ]
 description = "Cli tool to init projects with custom file structure"
 license = "MIT"
 edition = "2021"
 
 [dependencies]
+clap = { version = "3.2.20", features = ["derive"] }
+dirs = "4.0.0"
+fsn = "0.1.0"
