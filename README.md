@@ -22,7 +22,7 @@ SUBCOMMANDS:
 
 **Examples**
 ```
-$ cat ~/.npi/c.fsn
+$ cat ~/.config/npi/c.fsn
 [Makefile]
 output := {{name}}
 
