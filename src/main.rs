@@ -28,58 +28,53 @@ enum Commands {
 }
 
 fn main() {
-    let default_conf_dir = format!("{}/.npi",dirs::home_dir().unwrap().to_str().unwrap());
-    match Path::new(&default_conf_dir).try_exists() {
+    let default_conf_dir = dirs::home_dir().unwrap().join(".npi");
+    let default_conf_dir = default_conf_dir.as_path();
+    match default_conf_dir.try_exists() {
         Ok(b) => {
             if !b {
-                match fs::create_dir_all(&default_conf_dir) {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("Failed to create directory ({}): {e}", &default_conf_dir)
-                    }
+                if let Err(e) = fs::create_dir_all(&default_conf_dir) {
+                    println!(
+                        "Failed to create directory ({}): {e}",
+                        &default_conf_dir.to_string_lossy()
+                    )
                 }
             }
         }
-        Err(e) => println!("Can't read {}: {e}", &default_conf_dir),
+        Err(e) => println!("Can't read {}: {e}", &default_conf_dir.to_string_lossy()),
     }
     let args = Args::parse();
-    match &args.command {
-        Some(Commands::New { name, app_type }) => {
-            println!("Creating project \"{name}\" of type \"{app_type}\"");
-            let full_path = format!(
-                "{}/{}.fsn",
-                &default_conf_dir, &app_type
-            );
-            match parse_file(Path::new(&full_path)) {
-                Ok(s) => {
-                    match fs::create_dir_all(format!("./{}", &name)) {
+    if let Some(Commands::New { name, app_type }) = &args.command {
+        println!("Creating project \"{name}\" of type \"{app_type}\"");
+        let full_path = format!("{}/{}.fsn", &default_conf_dir.to_string_lossy(), &app_type);
+        match parse_file(Path::new(&full_path)) {
+            Ok(s) => {
+                match fs::create_dir_all(format!("./{}", &name)) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!("Failed to create directory ({}): {e}", &name)
+                    }
+                }
+                for dir in s.directories {
+                    match fs::create_dir_all(format!("./{}/{}", &name, &dir)) {
                         Ok(_) => {}
                         Err(e) => {
-                            println!("Failed to create directory ({}): {e}", &name)
-                        }
-                    }
-                    for dir in s.directories {
-                        match fs::create_dir_all(format!("./{}/{}", &name, &dir)) {
-                            Ok(_) => {}
-                            Err(e) => {
-                                println!("Failed to create directory ({dir}): {e}")
-                            }
-                        }
-                    }
-                    for file in s.files {
-                        let custom_contents = &file.contents.replace(r"{{name}}", &name);
-                        match fs::write(format!("./{}/{}", &name, file.name), custom_contents) {
-                            Ok(_) => {}
-                            Err(e) => println!("Failed to write to file ({}): {e}", file.name),
+                            println!("Failed to create directory ({dir}): {e}")
                         }
                     }
                 }
-                Err(e) => println!("Error parsing the file {}: {e}", &full_path),
+                for file in s.files {
+                    let custom_contents = &file.contents.replace(r"{{name}}", &name);
+                    match fs::write(format!("./{}/{}", &name, file.name), custom_contents) {
+                        Ok(_) => {}
+                        Err(e) => println!("Failed to write to file ({}): {e}", file.name),
+                    }
+                }
             }
+            Err(e) => println!("Error parsing the file {}: {e}", &full_path),
         }
-        None => {
-            _ = Args::command().print_help();
-            process::exit(1);
-        }
+    } else {
+        _ = Args::command().print_help();
+        process::exit(1);
     }
 }
