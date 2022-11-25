@@ -28,50 +28,40 @@ enum Commands {
 }
 
 fn main() {
-    let default_conf_dir = dirs::config_dir().unwrap().join(".npi");
-    let default_conf_dir = default_conf_dir.as_path();
-    match default_conf_dir.try_exists() {
-        Ok(b) => {
-            if !b {
-                if let Err(e) = fs::create_dir_all(&default_conf_dir) {
-                    eprintln!(
-                        "Failed to create directory ({}): {e}",
-                        &default_conf_dir.to_string_lossy()
-                    )
-                }
-            }
+    let default_conf_dir = dirs::config_dir().unwrap().join("npi");
+    if !default_conf_dir.exists() {
+        if let Err(e) = fs::create_dir_all(&default_conf_dir) {
+            eprintln!(
+                "Failed to create config directory ({}): {e}",
+                default_conf_dir.to_string_lossy()
+            )
         }
-        Err(e) => eprintln!("Can't read {}: {e}", &default_conf_dir.to_string_lossy()),
     }
     let args = Args::parse();
     if let Some(Commands::New { name, app_type }) = &args.command {
         println!("Creating project \"{name}\" of type \"{app_type}\"");
-        let full_path = format!("{}/{}.fsn", &default_conf_dir.to_string_lossy(), &app_type);
-        match parse_file(Path::new(&full_path)) {
+        let full_path = default_conf_dir.join(format!("{app_type}.fsn"));
+        match parse_file(&full_path) {
             Ok(s) => {
-                match fs::create_dir_all(format!("./{}", &name)) {
-                    Ok(_) => {}
-                    Err(e) => {
-                        eprintln!("Failed to create directory ({}): {e}", &name)
-                    }
+                if let Err(e) = fs::create_dir_all(&name) {
+                    eprintln!("Failed to create directory ({name}): {e}")
                 }
                 for dir in s.directories {
-                    match fs::create_dir_all(format!("./{}/{}", &name, &dir)) {
-                        Ok(_) => {}
-                        Err(e) => {
-                            eprintln!("Failed to create directory ({dir}): {e}")
-                        }
+                    if let Err(e) = fs::create_dir_all(Path::new(name).join(&dir)) {
+                        eprintln!("Failed to create directory ({dir}): {e}")
                     }
                 }
                 for file in s.files {
-                    let custom_contents = &file.contents.replace(r"{{name}}", &name);
-                    match fs::write(format!("./{}/{}", &name, file.name), custom_contents) {
-                        Ok(_) => {}
-                        Err(e) => eprintln!("Failed to write to file ({}): {e}", file.name),
+                    let custom_contents = file.contents.replace(r"{{name}}", name);
+                    if let Err(e) = fs::write(Path::new(name).join(&file.name), custom_contents) {
+                        eprintln!("Failed to write to file ({}): {e}", file.name);
                     }
                 }
             }
-            Err(e) => println!("Error parsing the file {}: {e}", &full_path),
+            Err(e) => println!(
+                "Error parsing the file {}: {e}",
+                full_path.to_string_lossy()
+            ),
         }
     } else {
         _ = Args::command().print_help();
